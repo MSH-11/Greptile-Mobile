@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "com.msh",
     "name": "Greptile-Mobile",
     "slug": "Greptile-Mobile",
     "version": "1.0.0",
@@ -12,16 +13,23 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.msh11.GreptileMobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.msh11.GreptileMobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6e15f94a-77a8-41fe-acff-6a7cf92445bd"
+      }
     }
   }
 }
