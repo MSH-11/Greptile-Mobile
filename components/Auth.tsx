@@ -16,6 +16,7 @@ const discovery = {
   tokenEndpoint: 'https://github.com/login/oauth/access_token',
 };
 
+// Redirect URI for AuthSession
 const redirectUri = AuthSession.makeRedirectUri({
   scheme: 'com.msh',
 });
@@ -23,32 +24,35 @@ const redirectUri = AuthSession.makeRedirectUri({
 type AuthScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AuthScreen'>;
 
 export default function Auth() {
-  const navigation = useNavigation<AuthScreenNavigationProp>();
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [userInfo, setUserInfo] = useState<any>(null);
-  const [repositories, setRepositories] = useState<any[]>([]);
-  const [selectedRepos, setSelectedRepos] = useState<any[]>([]);
-  const [isIndexing, setIsIndexing] = useState(false); // New state to track indexing status
+  const navigation = useNavigation<AuthScreenNavigationProp>(); // Navigation hook for navigating between screens
+  const [accessToken, setAccessToken] = useState<string | null>(null); // State to store GitHub access token
+  const [userInfo, setUserInfo] = useState<any>(null); // State to store GitHub user information
+  const [repositories, setRepositories] = useState<any[]>([]); // State to store user's GitHub repositories
+  const [selectedRepos, setSelectedRepos] = useState<any[]>([]); // State to store selected repositories
+  const [isIndexing, setIsIndexing] = useState(false); // State to track if repositories are being indexed
 
+  // GitHub OAuth request
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: GITHUB_CLIENT_ID,
-      scopes: ['user', 'read:org', 'user:email', 'repo', 'gist'],
+      scopes: ['user', 'read:org', 'user:email', 'repo', 'gist'], // Required scopes for the app
       redirectUri,
     },
     discovery
   );
 
   useEffect(() => {
+    // Handle the OAuth response
     if (response?.type === 'success') {
       const { code } = response.params;
       console.log('Authorization Code received:', code);
-      fetchAccessToken(code);
+      fetchAccessToken(code); // Fetch access token using the authorization code
     } else if (response) {
       console.log('OAuth Response:', response);
     }
   }, [response]);
 
+  // Fetch the access token using the authorization code
   const fetchAccessToken = async (code: string) => {
     console.log('Fetching access token...');
     try {
@@ -80,12 +84,13 @@ export default function Auth() {
 
       setAccessToken(data.access_token);
       console.log('Access Token set:', data.access_token);
-      fetchGitHubUser(data.access_token);
+      fetchGitHubUser(data.access_token); // Fetch user information using the access token
     } catch (error) {
       console.error('Error fetching access token:', error);
     }
   };
 
+  // Fetch the user's GitHub information
   const fetchGitHubUser = async (token: string) => {
     console.log('Fetching GitHub user info...');
     try {
@@ -97,13 +102,14 @@ export default function Auth() {
 
       const data = await response.json();
       console.log('GitHub user data:', data);
-      setUserInfo(data);
-      fetchRepositories(token);
+      setUserInfo(data); // Store user information
+      fetchRepositories(token); // Fetch the user's repositories
     } catch (error) {
       console.error('Error fetching user info:', error);
     }
   };
 
+  // Fetch the user's repositories from GitHub
   const fetchRepositories = async (token: string) => {
     console.log('Fetching GitHub repositories...');
     try {
@@ -114,21 +120,23 @@ export default function Auth() {
       });
 
       const repos = await response.json();
-      setRepositories(repos);
+      setRepositories(repos); // Store repositories
     } catch (error) {
       console.error('Error fetching repositories:', error);
     }
   };
 
+  // Toggle repository selection
   const toggleRepositorySelection = (repo: any) => {
     const isSelected = selectedRepos.some((r) => r.id === repo.id);
     if (isSelected) {
-      setSelectedRepos(selectedRepos.filter((r) => r.id !== repo.id));
+      setSelectedRepos(selectedRepos.filter((r) => r.id !== repo.id)); // Deselect repository
     } else {
-      setSelectedRepos([...selectedRepos, repo]);
+      setSelectedRepos([...selectedRepos, repo]); // Select repository
     }
   };
 
+  // Confirm the selection of repositories and start indexing
   const confirmSelection = async () => {
     if (selectedRepos.length === 0) {
       Alert.alert('No Repositories Selected', 'Please select at least one repository to index.');
@@ -138,18 +146,18 @@ export default function Auth() {
     setIsIndexing(true); // Set indexing status to true
 
     for (const repo of selectedRepos) {
-      await indexRepository(repo.name, repo.owner.login);
+      await indexRepository(repo.name, repo.owner.login); // Index each selected repository
     }
 
     console.log('Repositories Indexed successfully.');
-    
 
     setTimeout(() => {
       navigation.navigate('ChatScreen', { repositories: selectedRepos, githubToken: accessToken });
-      setIsIndexing(false); // Set indexing status to false
+      setIsIndexing(false); // Reset indexing status
     }, 2000); // Add a slight delay before navigating
   };
 
+  // Index a selected repository using the Greptile API
   const indexRepository = async (repoName: string, owner: string) => {
     if (!accessToken) {
       console.error('GitHub token not found');
@@ -186,6 +194,7 @@ export default function Auth() {
     }
   };
 
+  // Handle sign out
   const handleSignOut = () => {
     console.log('Signing out...');
     setAccessToken(null);
@@ -195,6 +204,7 @@ export default function Auth() {
     Alert.alert('Signed out', 'You have been signed out successfully.');
   };
 
+  // Render each repository item in the list
   const renderRepositoryItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.repoItem}
@@ -211,15 +221,11 @@ export default function Auth() {
       </View>
     </TouchableOpacity>
   );
-  
-  
-
-
 
   return (
     <SafeAreaView style={styles.container}>
       {!accessToken ? (
-        <View style={styles.centeredContainer}> 
+        <View style={styles.centeredContainer}>
           <Text style={styles.welcomeMessage}>Welcome to Greptile Mobile!</Text>
           <TouchableOpacity style={styles.signInButton} onPress={() => promptAsync()}>
             <Image source={require('../assets/github.png')} style={styles.githubIcon} />
@@ -384,4 +390,3 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
 });
-

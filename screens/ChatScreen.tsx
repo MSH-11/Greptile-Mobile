@@ -18,17 +18,19 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
+  // Effect hook to load initial chat history if needed
   useEffect(() => {
-    // Load initial chat history if needed
+    // Future implementation: load previous chat history here
   }, []);
 
+  // Function to handle sending messages
   const onSend = async (newMessages: IMessage[] = []) => {
-    setMessages(GiftedChat.append(messages, newMessages));
+    setMessages(GiftedChat.append(messages, newMessages)); // Append new message to the chat
     const userMessage = newMessages[0].text;
 
-    setLoading(true);
+    setLoading(true); // Set loading state to true while querying
     try {
-      const response = await queryRepositories(userMessage);
+      const response = await queryRepositories(userMessage); // Query the repositories with the user message
       const botMessage = response.message;
       const botResponse = [{
         _id: Math.random().toString(),
@@ -40,15 +42,16 @@ export default function ChatScreen() {
           avatar: 'https://placeimg.com/140/140/tech',
         },
       }];
-      setMessages((previousMessages) => GiftedChat.append(previousMessages, botResponse));
+      setMessages((previousMessages) => GiftedChat.append(previousMessages, botResponse)); // Append bot response to chat
     } catch (error) {
       console.error('Error querying Greptile:', error);
       Alert.alert('Error', 'An error occurred while querying the repository.');
     } finally {
-      setLoading(false);
+      setLoading(false); // Set loading state back to false
     }
   };
 
+  // Function to query repositories based on user input
   const queryRepositories = async (query: string) => {
     const requestBody = {
       messages: [{ content: query, role: 'user' }],
@@ -73,6 +76,7 @@ export default function ChatScreen() {
     return response.json();
   };
 
+  // Custom renderer for message text to support Markdown
   const renderMessageText = (props: any) => {
     const { currentMessage } = props;
     const isCurrentUser = props.position === 'right';
@@ -97,6 +101,7 @@ export default function ChatScreen() {
     );
   };
 
+  // Custom renderer for message bubbles
   const renderBubble = (props: any) => {
     return (
       <Bubble
@@ -120,6 +125,7 @@ export default function ChatScreen() {
     );
   };
 
+  // Custom renderer for input toolbar
   const renderInputToolbar = (props: any) => {
     return (
       <InputToolbar
@@ -140,6 +146,7 @@ export default function ChatScreen() {
     );
   };
 
+  // Custom renderer for the send button
   const renderSend = (props: any) => {
     return (
       <Send {...props}>
@@ -152,13 +159,18 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header with back button and title */}
       <View style={styles.headerContainer}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#033801" />
         </TouchableOpacity>
         <Text style={styles.headerText}>Chat with Repos    </Text>
       </View>
+
+      {/* Loading indicator */}
       {loading && <ActivityIndicator size="large" color="#388e3c" />}
+
+      {/* Chat interface */}
       <GiftedChat
         messages={messages}
         onSend={(messages) => onSend(messages)}
