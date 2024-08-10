@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Button, View, Text, StyleSheet, Alert, FlatList, TouchableOpacity } from 'react-native';
-import CheckBox from '@react-native-community/checkbox'; // Updated import
+import { TouchableOpacity, View, Text, StyleSheet, FlatList, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GREPTILE_API_KEY } from '@env';
 import { RootStackParamList } from '../navigationTypes';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -27,7 +27,8 @@ export default function Auth() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [repositories, setRepositories] = useState<any[]>([]);
-  const [selectedRepos, setSelectedRepos] = useState<any[]>([]); // State to hold selected repos
+  const [selectedRepos, setSelectedRepos] = useState<any[]>([]);
+  const [isIndexing, setIsIndexing] = useState(false); // New state to track indexing status
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
@@ -134,14 +135,19 @@ export default function Auth() {
       return;
     }
 
-    Alert.alert('Indexing Repositories', 'Please wait while your selected repositories are being indexed.');
+    setIsIndexing(true); // Set indexing status to true
 
     for (const repo of selectedRepos) {
       await indexRepository(repo.name, repo.owner.login);
     }
 
-    Alert.alert('Repositories Indexed', 'Your selected repositories have been indexed successfully.');
-    navigation.navigate('ChatScreen', { repositories: selectedRepos, githubToken: accessToken });
+    console.log('Repositories Indexed successfully.');
+    
+
+    setTimeout(() => {
+      navigation.navigate('ChatScreen', { repositories: selectedRepos, githubToken: accessToken });
+      setIsIndexing(false); // Set indexing status to false
+    }, 2000); // Add a slight delay before navigating
   };
 
   const indexRepository = async (repoName: string, owner: string) => {
@@ -194,11 +200,11 @@ export default function Auth() {
       style={styles.repoItem}
       onPress={() => toggleRepositorySelection(item)}
     >
-      <CheckBox
-        value={selectedRepos.some((repo) => repo.id === item.id)}
-        onValueChange={() => toggleRepositorySelection(item)}
-        style={styles.checkbox} // Added style for checkbox
-      />
+      <View style={[styles.checkbox, selectedRepos.some((repo) => repo.id === item.id) && styles.checkedCheckbox]}>
+        {selectedRepos.some((repo) => repo.id === item.id) && (
+          <View style={styles.checkboxTick} />
+        )}
+      </View>
       <View style={styles.repoTextContainer}>
         <Text style={styles.repoName}>{item.name}</Text>
         <Text style={styles.repoDescription}>{item.description || "No description provided"}</Text>
@@ -206,25 +212,31 @@ export default function Auth() {
     </TouchableOpacity>
   );
   
+  
+
+
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {!accessToken ? (
-        <Button
-          disabled={!request}
-          title="Sign in with GitHub"
-          onPress={() => {
-            console.log('Initiating GitHub OAuth flow...');
-            promptAsync();
-          }}
-        />
+        <View style={styles.centeredContainer}> 
+          <Text style={styles.welcomeMessage}>Welcome to Greptile Mobile!</Text>
+          <TouchableOpacity style={styles.signInButton} onPress={() => promptAsync()}>
+            <Image source={require('../assets/github.png')} style={styles.githubIcon} />
+            <Text style={styles.signInButtonText}>Sign in with GitHub</Text>
+          </TouchableOpacity>
+        </View>
+      ) : isIndexing ? (
+        <View style={styles.centeredContainer}>
+          <Text style={styles.indexingMessage}>Indexing Repositories, Please Wait...</Text>
+        </View>
       ) : (
         <View>
           <View style={styles.header}>
             <Text style={styles.heading}>Welcome, {userInfo?.login}!</Text>
-            <View style={styles.signOutButtonContainer}>
-              <Button title="Sign Out" onPress={handleSignOut} />
-            </View>
+            <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+              <Text style={styles.signOutButtonText}>Sign Out</Text>
+            </TouchableOpacity>
           </View>
           <Text style={styles.subHeading}>Select repositories to index:</Text>
           <FlatList
@@ -233,15 +245,12 @@ export default function Auth() {
             renderItem={renderRepositoryItem}
             style={styles.flatList}
           />
-          <View style={styles.confirmButtonContainer}>
-            <Button
-              title="Confirm Selection"
-              onPress={confirmSelection}
-            />
-          </View>
+          <TouchableOpacity style={styles.confirmButton} onPress={confirmSelection}>
+            <Text style={styles.confirmButtonText}>Confirm Selection</Text>
+          </TouchableOpacity>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -249,7 +258,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: '#dcedc8', // Pastel green background color
+  },
+  centeredContainer: {
+    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  indexingMessage: {
+    fontSize: 18,
+    color: '#1b5e20',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  welcomeMessage: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#1b5e20',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  signInButton: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    elevation: 50,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  githubIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
+  },
+  signInButtonText: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#1b5e20',
   },
   header: {
     flexDirection: 'row',
@@ -259,44 +305,83 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 18,
+    color: '#1b5e20',
+    fontWeight: '600',
   },
   subHeading: {
     fontSize: 16,
     marginBottom: 20,
+    fontWeight: '500',
+    color: '#1b5e20',
     textAlign: 'center',
   },
   repoItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#a5d6a7', // Lighter pastel green for repo items
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 10,
   },
   checkbox: {
-    marginRight: 10, // Adjusted spacing for the checkbox
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#1b5e20',
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkedCheckbox: {
+    backgroundColor: '#388e3c',
+  },
+  checkboxTick: {
+    width: 12,
+    height: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 2,
   },
   repoTextContainer: {
-    flexShrink: 1, // Ensures text does not overflow
+    flexShrink: 1,
   },
   repoName: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#0e3311',
   },
   repoDescription: {
     fontSize: 14,
-    color: '#555',
+    color: '#1f5223',
   },
-  signOutButtonContainer: {
-    marginLeft: 10,
+  signOutButton: {
+    padding: 10,
+    backgroundColor: '#c62828',
+    borderRadius: 8,
   },
-  confirmButtonContainer: {
+  signOutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  confirmButton: {
     marginTop: 20,
+    padding: 15,
+    backgroundColor: '#388e3c',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   flatList: {
     height: 400,
-    backgroundColor: 'red',
-    flexGrow: 0
-  }
+    backgroundColor: '#dcedc8', // Match the background with the overall theme
+    flexGrow: 0,
+  },
 });
 

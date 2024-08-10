@@ -11,8 +11,16 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Auth">
-        <Stack.Screen name="AuthScreen" component={Auth} options={{ title: 'Home' }} />
-        <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ title: 'Chat with Repo' }} />
+        <Stack.Screen 
+          name="AuthScreen" 
+          component={Auth} 
+          options={{ headerShown: false }}  // Remove header
+        />
+        <Stack.Screen 
+          name="ChatScreen" 
+          component={ChatScreen} 
+          options={{ headerShown: false }}  // Remove header
+        />
       </Stack.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>
