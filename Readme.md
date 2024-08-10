@@ -25,7 +25,7 @@ To get started with Greptile Mobile, you will need:
 1. **Clone the Repository:**
 
    ```bash
-   git clone https://github.com/your-username/greptile-mobile.git
+   git clone https://github.com/MSH-11/Greptile-Mobile
    cd greptile-mobile
    ```
 
