@@ -1,5 +1,7 @@
 # Greptile Mobile
 
+![Greptile Mobile Demo](./Greptile.gif)
+
 **Greptile Mobile** allows users to perform repository searches and interactions similar to the Greptile web app, but on the go. With this mobile application, you can sign in with your GitHub account, select repositories, and chat with an AI that helps you query and explore your codebase right from your mobile device.
 
 ## Features
